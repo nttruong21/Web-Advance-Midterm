@@ -1,0 +1,21 @@
+<div class="d-flex h-100">
+    <form action="/register" method="POST" id="login-form" class="p-4 w-30 m-auto border-radius-12"
+        enctype="multipart/form-data">
+        <div class="form-group">
+            <label class="text-white" for="username">Username</label>
+            <input required type="text" name="username" id="username" class="form-control">
+        </div>
+        <div class="form-group">
+            <label class="text-white" for="password">Password</label>
+            <input required type="text" name="password" id="password" class="form-control">
+        </div>
+        <div class="form-group">
+            <label class="text-white" for="avatar">Avatar</label>
+            <input required type="file" name="avatar" id="avatar" class="form-control"
+                accept="image/*">
+        </div>
+        <button class="btn mb-2" type="submit">Register</button>
+        <p class="text-white">Have had an account? <a class="text-white" href="/login">Login
+                now</a></p>
+    </form>
+</div>

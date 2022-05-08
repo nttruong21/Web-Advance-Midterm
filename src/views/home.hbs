@@ -1,0 +1,168 @@
+<div class="container-fluid h-100">
+    <div class="row justify-content-center align-items-center h-100">
+        {{!-- CONTACTS --}}
+        <div class="col-md-4 col-xl-4 chat ">
+            <div class="column-item left-card mb-sm-3 mb-md-0 contacts_card">
+                <div class="card-header card-left-header">
+                    <div class="input-group">
+                        <input type="text" placeholder="Search..." name=""
+                            class="form-control search">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text search_btn"><i
+                                    class="fas fa-search"></i></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body contacts_body">
+                    <ui id="contacts" class="contacts">
+                        {{#each users}}
+                        <li class="active border-radius-12" data-room="{{this.room}}"
+                            data-user-username="{{this.username}}" data-user-id="{{this._id}}"
+                            data-user-avatar="{{this.avatar}}" onclick="reRenderChatColumn(this)">
+                            <div class="d-flex bd-highlight">
+                                <div class="img_cont">
+                                    <img src="/avatar/{{this.avatar}}"
+                                        class="rounded-circle user_img">
+                                    <span class="online_icon"></span>
+                                </div>
+                                <div class="user_info">
+                                    <span>{{this.username}}</span>
+                                    <p>{{this.username}} is online</p>
+                                </div>
+                            </div>
+                        </li>
+                        {{else}}
+                        No one
+                        {{/each}}
+                    </ui>
+                </div>
+            </div>
+        </div>
+
+        {{!-- CHAT --}}
+        <div class="col-md-8 col-xl-8 chat">
+            <div class="column-item right-card">
+                <div class="card-header msg_head">
+                    <div class="d-flex bd-highlight align-items-center">
+                        {{#if firstUser}}
+                        <div class="img_cont">
+                            <img id="current-user-avatar" src="/avatar/{{firstUser.avatar}}"
+                                class="rounded-circle user_img">
+                            <span class="online_icon"></span>
+                        </div>
+                        <div class="user_info mr-auto">
+                            <span id="current-user-name">{{firstUser.username}}</span>
+                            <p>1767 Messages</p>
+                        </div>
+                        {{/if}}
+                        <div class="user-actions">
+                            <span><i class="fa-solid fa-phone"></i></span>
+                            <span><i class="fas fa-video"></i></span>
+                            <span <i class="fas fa-ellipsis-v"></i></span>
+                        </div>
+                    </div>
+                </div>
+
+                {{!-- CHAT MESSAGES CONTENT --}}
+                <div class="card-body msg_card_body" id="chat-message-content">
+                </div>
+
+                <div class="card-footer send-message-group">
+                    <form id="send-message-form" class="input-group message-input">
+                        <input id="message-input" class="form-control type_msg"
+                            placeholder="Type your message..."></input>
+                        <button id="send-message-btn" class="input-group-text send_btn"
+                            type="submit">
+                            <i class="fas fa-location-arrow"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="user-session" data-user-session-id="{{userSession._id}}"
+        data-user-session-username="{{userSession.username}}"
+        data-user-session-avatar="{{userSession.avatar}}"></div>
+</div>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const socket = io("http://localhost:3000");
+
+    const sendMessageForm = document.getElementById("send-message-form");
+    const messageInput = document.getElementById("message-input");
+    const sendMessageBtn = document.getElementById("send-message-btn");
+    const chatMessageContent = document.getElementById("chat-message-content");
+
+    // USER SESSION
+    const userSessionUsername = document.getElementById("user-session").dataset.userSessionUsername || "";
+    const userSessionAvatar = document.getElementById("user-session").dataset.userSessionAvatar || "";
+    const userSessionId = document.getElementById("user-session").dataset.userSessionId || "";
+    console.log(">>> User session: ", userSessionId);
+
+    // CURRENT CHATTED USER
+    let currentUserUsername, currentUserId;
+    currentUserUsername = document.querySelector("#contacts li").dataset.userUsername || "";
+    currentUserId = document.querySelector("#contacts li").dataset.userId || "";
+    console.log(">>> Current user: ", currentUserId);
+
+    // GỬI YÊU CẦU THAY ĐỔI ROOM 
+    socket.emit("client-change-room", (userSessionId + currentUserId).split("").sort().join(""));
+
+    sendMessageForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        // CLIENT GỬI DỮ LIỆU LÊN SERVER -> EMIT
+        const message = messageInput.value;
+        const time = new Date().toLocaleString();
+
+        socket.emit("client-sent-data", { sender: userSessionUsername, receiver: currentUserUsername, message, time, avatar: userSessionAvatar, room: (userSessionId + currentUserId).split("").sort().join("") });
+        messageInput.value = "";
+
+        const itemMessage = document.createElement("div");
+        itemMessage.innerHTML = `
+            <div class="d-flex justify-content-end mb-4">
+                <div class="img_cont_msg">
+                    <img src="/avatar/${userSessionAvatar}"
+                        class="rounded-circle user_img_msg">
+                </div>
+                <div class="msg_container"> 
+                    ${message}
+                    <span  class="msg_time w-100-px ">${time}</span>
+                </div>
+            </div>  
+        `;
+        chatMessageContent.appendChild(itemMessage);
+    });
+
+    // CLIENT NHẬN DỮ LIỆU TỪ SERVER  -> ON
+    socket.on("server-sent-data", (data) => {
+        const itemMessage = document.createElement("div");
+        itemMessage.innerHTML = `
+            <div class="d-flex justify-content-start mb-4">
+                <div class="img_cont_msg">
+                    <img src="/avatar/${data.avatar}"
+                        class="rounded-circle user_img_msg">
+                </div>
+                <div class="msg_container"> 
+                    ${data.message}
+                    <span  class="msg_time w-100-px ">${data.time}</span>
+                </div>
+            </div>
+        `;
+        chatMessageContent.appendChild(itemMessage);
+    });
+
+    // NHẤN VÀO USER -> ADD TO ROOM
+    function reRenderChatColumn(e) {
+        const username = e.dataset.userUsername;
+        const avatar = e.dataset.userAvatar;
+        const id = e.dataset.userId;
+        // console.log(username, avatar);
+        document.getElementById("current-user-avatar").src = "/avatar/" + avatar;
+        document.getElementById("current-user-name").textContent = username;
+        currentUserId = id;
+        currentUserUsername = username;
+        console.log(">>> Current user: ", currentUserId);
+        // GỬI YÊU CẦU THAY ĐỔI ROOM 
+        socket.emit("client-change-room", (userSessionId + currentUserId).split("").sort().join(""));
+    }
+</script>
