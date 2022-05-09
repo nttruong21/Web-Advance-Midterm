@@ -15,11 +15,27 @@
                 </div>
                 <div class="card-body contacts_body">
                     <ui id="contacts" class="contacts">
+                        {{!-- ROOM TỔNG --}}
+                        <li class="active border-radius-12" data-room="multiUserChat"
+                            data-user-avatar="{{this.avatar}}" onclick="changeRoom(this)">
+                            <div class="d-flex bd-highlight align-items-center">
+                                <div class="img_cont">
+                                    <img src="https://toppng.com/uploads/preview/real-madrid-cf-logo-vector-11574227807ksehd7rvh5.png"
+                                        class="rounded-circle user_img">
+                                    <span class="online_icon"></span>
+                                </div>
+                                <div class="user_info">
+                                    <span>Room</span>
+                                    <p> is online</p>
+                                </div>
+                            </div>
+                        </li>
+                        {{!-- USERS --}}
                         {{#each users}}
-                        <li class="active border-radius-12" data-room="{{this.room}}"
+                        <li class="active border-radius-12" data-room="onlyUserChat"
                             data-user-username="{{this.username}}" data-user-id="{{this._id}}"
-                            data-user-avatar="{{this.avatar}}" onclick="reRenderChatColumn(this)">
-                            <div class="d-flex bd-highlight">
+                            data-user-avatar="{{this.avatar}}" onclick="changeRoom(this)">
+                            <div class="d-flex bd-highlight align-items-center">
                                 <div class="img_cont">
                                     <img src="/avatar/{{this.avatar}}"
                                         class="rounded-circle user_img">
@@ -44,17 +60,16 @@
             <div class="column-item right-card">
                 <div class="card-header msg_head">
                     <div class="d-flex bd-highlight align-items-center">
-                        {{#if firstUser}}
                         <div class="img_cont">
-                            <img id="current-user-avatar" src="/avatar/{{firstUser.avatar}}"
+                            <img id="current-user-avatar"
+                                src="https://toppng.com/uploads/preview/real-madrid-cf-logo-vector-11574227807ksehd7rvh5.png"
                                 class="rounded-circle user_img">
                             <span class="online_icon"></span>
                         </div>
                         <div class="user_info mr-auto">
-                            <span id="current-user-name">{{firstUser.username}}</span>
+                            <span id="current-user-name">Room</span>
                             <p>1767 Messages</p>
                         </div>
-                        {{/if}}
                         <div class="user-actions">
                             <span><i class="fa-solid fa-phone"></i></span>
                             <span><i class="fas fa-video"></i></span>
@@ -99,36 +114,41 @@
     const userSessionId = document.getElementById("user-session").dataset.userSessionId || "";
     console.log(">>> User session: ", userSessionId);
 
-    // CURRENT CHATTED USER
-    let currentUserUsername, currentUserId;
-    currentUserUsername = document.querySelector("#contacts li").dataset.userUsername || "";
-    currentUserId = document.querySelector("#contacts li").dataset.userId || "";
-    console.log(">>> Current user: ", currentUserId);
+    // CURRENT CHATTED USER / ROOM
+    let currentUserUsername = "Room";
+    let currentRoom = "multiUserChat";
+    console.log(">>> Current user: ", currentUserUsername);
+    console.log(">>> Current room: ", currentRoom);
 
     // GỬI YÊU CẦU THAY ĐỔI ROOM 
-    socket.emit("client-change-room", (userSessionId + currentUserId).split("").sort().join(""));
+    socket.emit("client-change-room", "multiUserChat");
 
+    // CLIENT GỬI DỮ LIỆU LÊN SERVER -> EMIT
     sendMessageForm.addEventListener("submit", (e) => {
         e.preventDefault();
-        // CLIENT GỬI DỮ LIỆU LÊN SERVER -> EMIT
+
         const message = messageInput.value;
         const time = new Date().toLocaleString();
 
-        socket.emit("client-sent-data", { sender: userSessionUsername, receiver: currentUserUsername, message, time, avatar: userSessionAvatar, room: (userSessionId + currentUserId).split("").sort().join("") });
+        if (currentRoom === "multiUserChat") {
+            socket.emit("client-sent-data", { sender: userSessionUsername, message, time, senderAvatar: userSessionAvatar, room: currentRoom });
+        } else {
+            socket.emit("client-sent-data", { sender: userSessionUsername, receiver: currentUserUsername, message, time, senderAvatar: userSessionAvatar, room: currentRoom });
+        }
         messageInput.value = "";
 
         const itemMessage = document.createElement("div");
         itemMessage.innerHTML = `
             <div class="d-flex justify-content-end mb-4">
+                <div class="msg_container_send">
+                    ${message}
+                    <span class="msg_time_send w-100-px">${time}</span>
+                </div>
                 <div class="img_cont_msg">
                     <img src="/avatar/${userSessionAvatar}"
                         class="rounded-circle user_img_msg">
                 </div>
-                <div class="msg_container"> 
-                    ${message}
-                    <span  class="msg_time w-100-px ">${time}</span>
-                </div>
-            </div>  
+            </div>
         `;
         chatMessageContent.appendChild(itemMessage);
     });
@@ -139,7 +159,7 @@
         itemMessage.innerHTML = `
             <div class="d-flex justify-content-start mb-4">
                 <div class="img_cont_msg">
-                    <img src="/avatar/${data.avatar}"
+                    <img src="/avatar/${data.senderAvatar}"
                         class="rounded-circle user_img_msg">
                 </div>
                 <div class="msg_container"> 
@@ -152,17 +172,63 @@
     });
 
     // NHẤN VÀO USER -> ADD TO ROOM
-    function reRenderChatColumn(e) {
-        const username = e.dataset.userUsername;
-        const avatar = e.dataset.userAvatar;
-        const id = e.dataset.userId;
-        // console.log(username, avatar);
-        document.getElementById("current-user-avatar").src = "/avatar/" + avatar;
-        document.getElementById("current-user-name").textContent = username;
-        currentUserId = id;
-        currentUserUsername = username;
-        console.log(">>> Current user: ", currentUserId);
-        // GỬI YÊU CẦU THAY ĐỔI ROOM 
-        socket.emit("client-change-room", (userSessionId + currentUserId).split("").sort().join(""));
+    function changeRoom(e) {
+        const room = e.dataset.room || ""
+        if (room === "multiUserChat") {
+            socket.emit("client-change-room", room);
+            currentRoom = room;
+            currentUserUsername = "Room";
+            console.log(">>> Current user: ", currentUserUsername);
+            console.log(">>> Current room: ", currentRoom);
+            document.getElementById("current-user-avatar").src = "https://toppng.com/uploads/preview/real-madrid-cf-logo-vector-11574227807ksehd7rvh5.png";
+            document.getElementById("current-user-name").textContent = "Room";
+        } else {
+            const username = e.dataset.userUsername || "";
+            const avatar = e.dataset.userAvatar || "";
+            const id = e.dataset.userId || "";
+            // console.log(username, avatar);
+            document.getElementById("current-user-avatar").src = "/avatar/" + avatar;
+            document.getElementById("current-user-name").textContent = username;
+            currentRoom = (userSessionId + id).split("").sort().join("");
+            currentUserUsername = username;
+            console.log(">>> Current user: ", currentUserUsername);
+            console.log(">>> Current room: ", currentRoom);
+            // GỬI YÊU CẦU THAY ĐỔI ROOM 
+            socket.emit("client-change-room", currentRoom);
+        }
     }
+
+    // CLIENT NHẬN NỘI DUNG CHAT CỦA ROOM VÀ RENDER RA MÀN HÌNH
+    socket.on("server-send-chats-of-room", (chats) => {
+        const html = chats.map(chat => {
+            if (chat.sender === userSessionUsername) {
+                return `
+                    <div class="d-flex justify-content-end mb-4">
+                        <div class="msg_container_send">
+                            ${chat.message}
+                            <span class="msg_time_send w-100-px">${new Date(chat.createdAt).toLocaleString()}</span>
+                        </div>
+                        <div class="img_cont_msg">
+                            <img src="/avatar/${chat.senderAvatar}"
+                                class="rounded-circle user_img_msg">
+                        </div>
+                    </div>
+                `;
+            } else {
+                return `
+                    <div class="d-flex justify-content-start mb-4">
+                        <div class="img_cont_msg">
+                            <img src="/avatar/${chat.senderAvatar}"
+                                class="rounded-circle user_img_msg">
+                        </div>
+                        <div class="msg_container"> 
+                            ${chat.message}
+                            <span  class="msg_time w-100-px ">${new Date(chat.createdAt).toLocaleString()}</span>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+        chatMessageContent.innerHTML = html.join("");
+    })
 </script>

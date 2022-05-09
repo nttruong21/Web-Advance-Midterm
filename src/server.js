@@ -6,6 +6,10 @@ const route = require("./routes/index");
 const db = require("./config/db");
 const credentials = require("./cookie/credentials");
 const Chat = require("./models/Chat");
+const {
+    multipleMongooseToObject,
+    mongooseToObject,
+} = require("./util/mongoose");
 
 const app = express();
 
@@ -49,28 +53,62 @@ io.on("connection", (socket) => {
     console.log(`>>> User connected: ${socket.id}`);
     socket.on("disconnect", () => {});
 
+    // CLIENT CHANGE ROOM
     socket.on("client-change-room", (room) => {
         socket.join(room);
+        // GET ALL CHATS OF ROOM
+        Chat.find({ room })
+            .then((chats) => {
+                io.in(room).emit(
+                    "server-send-chats-of-room",
+                    multipleMongooseToObject(chats)
+                );
+            })
+            .catch((error) =>
+                console.log(`>>> Có lỗi khi lấy nội dung chat của room ${room}`)
+            );
         // console.log(">>> Current room: ", room);
     });
 
     // SERVER LẮNG NGHE DỮ LIỆU TỪ CLIENT
     socket.on("client-sent-data", (data) => {
         // LƯU TIN NHẮN VÀO DATABASE
-        console.log(">>> Data: ", data);
-        const newChat = new Chat({
-            sender: data.sender,
-            receiver: data.receiver,
-            message: data.message,
-        });
-        newChat.save(function (error, small) {
-            if (error) {
-                console.log(">>> Had error when create new chat to database");
-                return;
-            }
-            // saved!
-        });
-
+        if (data.room === "multiUserChat") {
+            Chat.create(
+                {
+                    sender: data.sender,
+                    message: data.message,
+                    room: data.room,
+                    senderAvatar: data.senderAvatar,
+                },
+                function (error, small) {
+                    if (error) {
+                        console.log(
+                            ">>> Had error when create new chat to database"
+                        );
+                        // saved!
+                    }
+                }
+            );
+        } else {
+            Chat.create(
+                {
+                    sender: data.sender,
+                    receiver: data.receiver,
+                    message: data.message,
+                    room: data.room,
+                    senderAvatar: data.senderAvatar,
+                },
+                function (error, small) {
+                    if (error) {
+                        console.log(
+                            ">>> Had error when create new chat to database"
+                        );
+                        // saved!
+                    }
+                }
+            );
+        }
         // SAU KHI LẮNG NGHE DỮ LIỆU, SERVER PHÁT LẠI DỮ LIỆU NÀY ĐẾN CÁC CLIENT KHÁC
         socket.to(data.room).emit("server-sent-data", data);
     });
