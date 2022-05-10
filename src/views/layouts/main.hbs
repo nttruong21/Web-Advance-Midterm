@@ -28,7 +28,37 @@
 </head>
 
 <body>
+
+    {{#if errorMessage}}
+    <div id="flash" class="bg-danger d-flex p-3">
+        <span><i class="fa-solid fa-triangle-exclamation text-white mr-3 fs-20"></i></span>
+        <span id="flash-message" class="text-white">{{errorMessage}}</span>
+    </div>
+    {{/if}}
+
     {{{body}}}
 </body>
+
+<script>
+
+    $(document).ready(function () {
+        $('#action_menu_btn').click(function () {
+            $('.action_menu').toggle();
+        });
+    });
+    function showFlash() {
+        flash.style.transform = "translateX(-16%)";
+        setTimeout(() => {
+            flash.style.transform = "translateX(100%)";
+        }, 4000);
+    }
+
+    window.addEventListener("load", () => {
+        const flash = document.getElementById("flash");
+        if (flash) {
+            showFlash();
+        }
+    });
+</script>
 
 </html>

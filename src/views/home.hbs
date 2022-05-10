@@ -3,8 +3,18 @@
         {{!-- CONTACTS --}}
         <div class="col-md-4 col-xl-4 chat ">
             <div class="column-item left-card mb-sm-3 mb-md-0 contacts_card">
-                <div class="card-header card-left-header">
-                    <div class="input-group">
+                <div class="card-header card-left-header d-flex align-items-center cursor-pointer">
+                    <span id="action_menu_btn"><img src="/avatar/{{userSession.avatar}}" alt=""
+                            class="rounded-circle user_img"></span>
+                    <div class="action_menu">
+                        <ul>
+                            <li><i class="fas fa-user-circle"></i>Profile</li>
+                            <li><i class="fas fa-users"></i>Create new room</li>
+                            <li onclick="logout()"><i
+                                    class="fa-solid fa-arrow-right-from-bracket"></i>Logout</li>
+                        </ul>
+                    </div>
+                    <div class="input-group ml-1-rem h-40-px">
                         <input type="text" placeholder="Search..." name=""
                             class="form-control search">
                         <div class="input-group-prepend">
@@ -48,7 +58,6 @@
                             </div>
                         </li>
                         {{else}}
-                        No one
                         {{/each}}
                     </ui>
                 </div>
@@ -101,6 +110,7 @@
 </div>
 <script src="/socket.io/socket.io.js"></script>
 <script>
+
     const socket = io("http://localhost:3000");
 
     const sendMessageForm = document.getElementById("send-message-form");
@@ -119,6 +129,10 @@
     let currentRoom = "multiUserChat";
     console.log(">>> Current user: ", currentUserUsername);
     console.log(">>> Current room: ", currentRoom);
+
+    setTimeout(() => {
+        chatMessageContent.scrollTop = chatMessageContent.scrollHeight;
+    }, 100);
 
     // GỬI YÊU CẦU THAY ĐỔI ROOM 
     socket.emit("client-change-room", "multiUserChat");
@@ -142,7 +156,7 @@
             <div class="d-flex justify-content-end mb-4">
                 <div class="msg_container_send">
                     ${message}
-                    <span class="msg_time_send w-100-px">${time}</span>
+                    <span class="msg_time_send">${time}</span>
                 </div>
                 <div class="img_cont_msg">
                     <img src="/avatar/${userSessionAvatar}"
@@ -151,12 +165,14 @@
             </div>
         `;
         chatMessageContent.appendChild(itemMessage);
+        chatMessageContent.scrollTop = chatMessageContent.scrollHeight;
     });
 
     // CLIENT NHẬN DỮ LIỆU TỪ SERVER  -> ON
     socket.on("server-sent-data", (data) => {
-        const itemMessage = document.createElement("div");
-        itemMessage.innerHTML = `
+        if (data.room === currentRoom) {
+            const itemMessage = document.createElement("div");
+            itemMessage.innerHTML = `
             <div class="d-flex justify-content-start mb-4">
                 <div class="img_cont_msg">
                     <img src="/avatar/${data.senderAvatar}"
@@ -164,11 +180,13 @@
                 </div>
                 <div class="msg_container"> 
                     ${data.message}
-                    <span  class="msg_time w-100-px ">${data.time}</span>
+                    <span  class="msg_time">${data.time}</span>
                 </div>
             </div>
         `;
-        chatMessageContent.appendChild(itemMessage);
+            chatMessageContent.appendChild(itemMessage);
+            chatMessageContent.scrollTop = chatMessageContent.scrollHeight;
+        }
     });
 
     // NHẤN VÀO USER -> ADD TO ROOM
@@ -206,7 +224,7 @@
                     <div class="d-flex justify-content-end mb-4">
                         <div class="msg_container_send">
                             ${chat.message}
-                            <span class="msg_time_send w-100-px">${new Date(chat.createdAt).toLocaleString()}</span>
+                            <span class="msg_time_send">${new Date(chat.createdAt).toLocaleString()}</span>
                         </div>
                         <div class="img_cont_msg">
                             <img src="/avatar/${chat.senderAvatar}"
@@ -223,12 +241,17 @@
                         </div>
                         <div class="msg_container"> 
                             ${chat.message}
-                            <span  class="msg_time w-100-px ">${new Date(chat.createdAt).toLocaleString()}</span>
+                            <span  class="msg_time">${new Date(chat.createdAt).toLocaleString()}</span>
                         </div>
                     </div>
                 `;
             }
         });
         chatMessageContent.innerHTML = html.join("");
+        chatMessageContent.scrollTop = chatMessageContent.scrollHeight;
     })
+
+    function logout() {
+        window.location.href = "/logout";
+    }
 </script>

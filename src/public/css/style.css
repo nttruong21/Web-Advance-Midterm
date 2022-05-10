@@ -10,6 +10,22 @@
     width: 100px;
 }
 
+.fs-20 {
+    font-size: 20px;
+}
+
+.ml-1-rem {
+    margin-left: 1rem;
+}
+
+.h-40-px {
+    height: 40px;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
 body,
 html {
     height: 100%;
@@ -17,6 +33,18 @@ html {
     background: #7f7fd5;
     background: -webkit-linear-gradient(to right, #91eae4, #86a8e7, #7f7fd5);
     background: linear-gradient(to right, #91eae4, #86a8e7, #7f7fd5);
+    position: relative;
+}
+
+#flash {
+    align-items: center;
+    position: fixed;
+    right: 0;
+    top: 20px;
+    transform: translateX(100%);
+    transition: all ease-out 0.2s;
+    width: 400px;
+    border-radius: 4px;
 }
 
 .chat {
@@ -65,7 +93,7 @@ html {
 }
 
 .card-left-header {
-    padding: 1.36rem 1rem;
+    padding: 0.76rem 1rem;
 }
 
 .card-footer {
@@ -222,6 +250,9 @@ html {
     position: relative;
 }
 .msg_time {
+    width: 300px;
+    display: flex;
+    justify-content: start;
     position: absolute;
     left: 0;
     bottom: -18px;
@@ -229,6 +260,9 @@ html {
     font-size: 10px;
 }
 .msg_time_send {
+    width: 300px;
+    display: flex;
+    justify-content: end;
     position: absolute;
     right: 0;
     bottom: -18px;
@@ -239,9 +273,7 @@ html {
     position: relative;
 }
 #action_menu_btn {
-    position: absolute;
-    right: 10px;
-    top: 10px;
+    position: relative;
     color: white;
     cursor: pointer;
     font-size: 20px;
@@ -250,11 +282,10 @@ html {
     z-index: 1;
     position: absolute;
     padding: 15px 0;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: #506f86;
     color: white;
     border-radius: 15px;
-    top: 30px;
-    right: 15px;
+    top: 74px;
     display: none;
 }
 .action_menu ul {
@@ -268,7 +299,8 @@ html {
     margin-bottom: 5px;
 }
 .action_menu ul li i {
-    padding-right: 10px;
+    width: 16px;
+    margin-right: 16px;
 }
 .action_menu ul li:hover {
     cursor: pointer;
